@@ -53,8 +53,6 @@ class Shell:
             'tree': self.show_tree,
             'rename': self.rename_file,
             'grep': self.grep_text,
-            'downloads': self.go_downloads,
-            'desktop': self.go_desktop,
             'zip': self.zip_file,
             'unzip': self.unzip_file,
             'env': self.show_env,
