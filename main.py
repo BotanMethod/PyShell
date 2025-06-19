@@ -4,15 +4,10 @@ import sys
 import platform
 import datetime
 import subprocess
-import curses
-import os
-from curses import textpad
 from colorama import init, Fore, Style
 
 # Initializing colorama for color output
 init(autoreset=True)
-
-version = '1.1'
 
 # Setting up encoding to support the Russian language
 sys.stdout.reconfigure(encoding='utf-8')
@@ -30,226 +25,6 @@ GLYPHS = {
     "divider": "─"
 }
 
-class TextEditor:
-    def __init__(self, filename=None):
-        self.filename = filename
-        self.lines = []
-        self.current_line = 0
-        self.current_col = 0
-        self.status = ""
-        self.unsaved_changes = False
-        self.quit = False
-        
-        if filename and os.path.exists(filename):
-            with open(filename, 'r', encoding='utf-8') as f:
-                self.lines = [line.rstrip('\n') for line in f.readlines()]
-        else:
-            self.lines = [""]
-            if filename:
-                self.status = f"Creating new file: {filename}"
-
-    def run(self, stdscr):
-        # Editor config
-        curses.curs_set(1)  # Visible cursor
-        stdscr.keypad(True)  # Enabling special keys
-        stdscr.timeout(10)  # Input timeout for screen refresh
-        
-        # Editor's Main Cycle
-        while not self.quit:
-            self.draw_ui(stdscr)
-            self.handle_input(stdscr)
-
-    def draw_ui(self, stdscr):
-        stdscr.clear()
-        h, w = stdscr.getmaxyx()
-        
-        # Displaying text with line numbers
-        for i, line in enumerate(self.lines[:h-2]):
-            line_num = f"{i+1:3d} │ "
-            stdscr.addstr(i, 0, line_num, curses.color_pair(1))
-            stdscr.addstr(line[:w-len(line_num)-1])
-            
-            # Highlighting the current line
-            if i == self.current_line:
-                try:
-                    stdscr.chgat(i, len(line_num), len(line), curses.A_REVERSE)
-                except:
-                    pass
-        
-        # Status bar
-        status_bar = f" {GLYPHS['file']} {self.filename} | String: {self.current_line+1}/{len(self.lines)} | "
-        if self.unsaved_changes:
-            status_bar += f"{Fore.RED}NOT SAVED{Style.RESET_ALL}"
-        else:
-            status_bar += "Saved"
-            
-        stdscr.addstr(h-2, 0, status_bar.ljust(w-1, ' '), curses.color_pair(2))
-        
-        # Command line
-        cmd_line = "Ctrl+S: Save | Ctrl+Q: Exit | Ctrl+F: Finder"
-        stdscr.addstr(h-1, 0, cmd_line.ljust(w-1, ' '), curses.color_pair(3))
-        
-        # Cursor positioning
-        try:
-            stdscr.move(
-                self.current_line, 
-                min(self.current_col + 8, w-1)
-            )
-        except:
-            pass
-        
-        stdscr.refresh()
-
-    def handle_input(self, stdscr):
-        try:
-            key = stdscr.getch()
-        except:
-            return
-
-        if key == -1:
-            return
-
-        # Navigation
-        if key == curses.KEY_UP:
-            self.current_line = max(0, self.current_line - 1)
-            self.adjust_column()
-        elif key == curses.KEY_DOWN:
-            self.current_line = min(len(self.lines)-1, self.current_line + 1)
-            self.adjust_column()
-        elif key == curses.KEY_LEFT:
-            if self.current_col > 0:
-                self.current_col -= 1
-            elif self.current_line > 0:
-                self.current_line -= 1
-                self.current_col = len(self.lines[self.current_line])
-        elif key == curses.KEY_RIGHT:
-            current_line_len = len(self.lines[self.current_line])
-            if self.current_col < current_line_len:
-                self.current_col += 1
-            elif self.current_line < len(self.lines)-1:
-                self.current_line += 1
-                self.current_col = 0
-        elif key == curses.KEY_PPAGE:  # Page Up
-            self.current_line = max(0, self.current_line - 10)
-            self.adjust_column()
-        elif key == curses.KEY_NPAGE:  # Page Down
-            self.current_line = min(len(self.lines)-1, self.current_line + 10)
-            self.adjust_column()
-        
-        # Control
-        elif key == 10:  # Enter
-            # Splitting the row into two
-            left = self.lines[self.current_line][:self.current_col]
-            right = self.lines[self.current_line][self.current_col:]
-            self.lines[self.current_line] = left
-            self.lines.insert(self.current_line+1, right)
-            self.current_line += 1
-            self.current_col = 0
-            self.unsaved_changes = True
-        elif key == curses.KEY_BACKSPACE:
-            if self.current_col > 0:
-                # Deleting a character on the left
-                line = self.lines[self.current_line]
-                self.lines[self.current_line] = line[:self.current_col-1] + line[self.current_col:]
-                self.current_col -= 1
-                self.unsaved_changes = True
-            elif self.current_line > 0:
-                # Combining with the previous line
-                prev_len = len(self.lines[self.current_line-1])
-                self.lines[self.current_line-1] += self.lines[self.current_line]
-                del self.lines[self.current_line]
-                self.current_line -= 1
-                self.current_col = prev_len
-                self.unsaved_changes = True
-        elif key == curses.KEY_DC:  # Delete
-            line = self.lines[self.current_line]
-            if self.current_col < len(line):
-                self.lines[self.current_line] = line[:self.current_col] + line[self.current_col+1:]
-                self.unsaved_changes = True
-            elif self.current_line < len(self.lines)-1:
-                # Combining with the next line
-                self.lines[self.current_line] += self.lines[self.current_line+1]
-                del self.lines[self.current_line+1]
-                self.unsaved_changes = True
-        
-        # Keyboard shortcuts
-        elif key == 19:  # Ctrl+S (Save)
-            self.save_file()
-        elif key == 17:  # Ctrl+Q (Exit)
-            self.quit = True
-        elif key == 6:   # Ctrl+F (Finder)
-            self.search(stdscr)
-        
-        # Ввод текста
-        elif 32 <= key <= 126:  # Printable characters
-            line = self.lines[self.current_line]
-            self.lines[self.current_line] = line[:self.current_col] + chr(key) + line[self.current_col:]
-            self.current_col += 1
-            self.unsaved_changes = True
-
-    def adjust_column(self):
-        """Adjusting the cursor position in the row"""
-        current_line_len = len(self.lines[self.current_line])
-        if self.current_col > current_line_len:
-            self.current_col = current_line_len
-
-    def save_file(self):
-        if not self.filename:
-            self.status = "Error: Enter file name"
-            return
-
-        try:
-            with open(self.filename, 'w', encoding='utf-8') as f:
-                f.write("\n".join(self.lines))
-            self.unsaved_changes = False
-            self.status = f"File saved: {self.filename}"
-        except Exception as e:
-            self.status = f"Saving error: {str(e)}"
-
-    def search(self, stdscr):
-        """Simple text search"""
-        h, w = stdscr.getmaxyx()
-        search_str = ""
-        cursor_pos = 0
-        
-        while True:
-            stdscr.addstr(h-1, 0, f"Search: {search_str}".ljust(w-1, ' '))
-            stdscr.move(h-1, 8 + cursor_pos)
-            stdscr.refresh()
-            
-            key = stdscr.getch()
-            
-            if key == 27:  # ESC
-                break
-            elif key == 10:  # Enter
-                self.perform_search(search_str)
-                break
-            elif key == curses.KEY_BACKSPACE:
-                if search_str and cursor_pos > 0:
-                    search_str = search_str[:cursor_pos-1] + search_str[cursor_pos:]
-                    cursor_pos -= 1
-            elif key == curses.KEY_LEFT:
-                cursor_pos = max(0, cursor_pos - 1)
-            elif key == curses.KEY_RIGHT:
-                cursor_pos = min(len(search_str), cursor_pos + 1)
-            elif 32 <= key <= 126:  # Printable characters
-                search_str = search_str[:cursor_pos] + chr(key) + search_str[cursor_pos:]
-                cursor_pos += 1
-
-    def perform_search(self, text):
-        """Search for text in a file"""
-        if not text:
-            return
-            
-        for i, line in enumerate(self.lines):
-            if text in line:
-                self.current_line = i
-                self.current_col = line.index(text)
-                self.status = f"Found in string {i+1}"
-                return
-                
-        self.status = "Text not found"
-
 class Shell:
     def __init__(self):
         self.username = os.getlogin()
@@ -263,8 +38,8 @@ class Shell:
             'pwd': self.print_work_dir,
             'mkdir': self.make_dir,
             'rmdir': self.remove_dir,
+            'mkfile': self.make_file,
             'rm': self.remove_file,
-            'cp': self.copy_file,
             'mv': self.move_file,
             'cat': self.cat_file,
             'echo': self.echo_text,
@@ -283,8 +58,7 @@ class Shell:
             'env': self.show_env,
             'setenv': self.set_env,
             'history': self.show_history,
-            'calc': self.calculator,
-            'edit': self.edit_file
+            'calc': self.calculator
         }
         self.history = []
         self.session_start = datetime.datetime.now()
@@ -326,12 +100,13 @@ class Shell:
         help_text = f"""
 {Fore.YELLOW}Avaible commands:{Style.RESET_ALL}
 
-{Fore.CYAN}{GLYPHS['file']}/{GLYPHS['folder']}File operations:{Style.RESET_ALL}
+{Fore.CYAN}File operations:{Style.RESET_ALL}
   ls, dir      - Show dir's content
   cd [path]    - Change directory
   pwd          - Print working directory
   mkdir [name]  - Create directory
   rmdir [name]  - Delete directory
+  mkfile [name] - Create file
   rm [filename]    - Delete file
   cp [file] [another_file] - Copy file/dir
   mv [content] [another_dir] - Move file/dir
@@ -340,10 +115,9 @@ class Shell:
   zip [file]   - Create ZIP-archive
   unzip [.zip]  - Extract ZIP-archive
   size [file]  - Show file's size
-  tree - Show the directory tree
-  edit [filename] - Edit file 
+  tree         - Show the directory tree
 
-{Fore.CYAN}🛠System commands:{Style.RESET_ALL}
+{Fore.CYAN}System commands:{Style.RESET_ALL}
   ps           - Show process list
   sysinfo      - About system
   env          - Environment variables
@@ -352,7 +126,7 @@ class Shell:
   clear        - Clear screen
   history      - Commands usage history
 
-{Fore.CYAN}⚙Utilities:{Style.RESET_ALL}
+{Fore.CYAN}Utilities:{Style.RESET_ALL}
   echo [text] - Print text
   find [filename] - Find file 
   grep [text] [file] - Find text in file
@@ -643,42 +417,6 @@ class Shell:
             print(f"{Fore.CYAN}Result: {result}")
         except Exception as e:
             print(f"{Fore.RED}{GLYPHS['error']} Calculation error: {str(e)}")
-            
-    def edit_file(self, args):
-        """Запуск текстового редактора"""
-        if not args:
-            print(f"{Fore.RED}{GLYPHS['error']} Укажите имя файла")
-            return
-            
-        filename = args[0]
-        try:
-            # Проверяем, установлен ли curses для Windows
-            if os.name == 'nt':
-                try:
-                    import curses
-                except ImportError:
-                    print(f"{Fore.RED}Для работы редактора установите windows-curses: pip install windows-curses")
-                    return
-            
-            # Инициализация цветов
-            curses.initscr()
-            curses.start_color()
-            curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)  # Номера строк
-            curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Статус бар
-            curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Командная строка
-            
-            # Запуск редактора
-            editor = TextEditor(filename)
-            editor.run(curses.initscr())
-            
-            # Восстановление терминала
-            curses.endwin()
-            
-            print(f"{Fore.GREEN}{GLYPHS['success']} Файл сохранен" if not editor.unsaved_changes else 
-                  f"{Fore.YELLOW}{GLYPHS['warning']} Выход без сохранения")
-        except Exception as e:
-            curses.endwin()
-            print(f"{Fore.RED}{GLYPHS['error']} Ошибка редактора: {str(e)}")
 
     def execute_system_command(self, command):
         """Run system command"""
