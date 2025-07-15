@@ -541,7 +541,7 @@ class Shell:
         file_name = args[0]
         try:
             size = os.path.getsize(file_name)
-            print(f"{Fore.CYAN}File size: {size} байт ({size/1024:.2f} KB)")
+            print(f"{Fore.CYAN}File size: {size} byte ({size/1024:.2f} KB)")
         except Exception as e:
             print(f"{Fore.RED}{GLYPHS['error']} Error: {str(e)}")
 
