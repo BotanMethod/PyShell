@@ -275,7 +275,6 @@ class Shell:
             'find': self.find_files,
             'size': self.file_size,
             'time': self.show_time,
-            'tree': self.show_tree,
             'rename': self.rename_file,
             'grep': self.grep_text,
             'zip': self.zip_file,
@@ -340,7 +339,6 @@ class Shell:
   zip [file]   - Create ZIP-archive
   unzip [.zip]  - Extract ZIP-archive
   size [file]  - Show file's size
-  tree - Show the directory tree
   edit [filename] - Edit file 
 
 {Fore.CYAN}🛠System commands:{Style.RESET_ALL}
@@ -551,13 +549,6 @@ class Shell:
         """Current time"""
         now = datetime.datetime.now()
         print(f"{Fore.CYAN}Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    def show_tree(self, args):
-        """Show directory tree"""
-        try:
-            os.system("tree")
-        except:
-            print(f"{Fore.YELLOW}{GLYPHS['warning']} Command 'tree' doesn't support by Your system")
 
     def rename_file(self, args):
         """Rename file"""
