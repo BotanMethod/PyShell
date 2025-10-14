@@ -3,6 +3,5 @@
 It has extensive list of commands for work with system.
 
 # Dependences
-* Python 3.8+
+* Python 2.7+
   * Colorama
-* Any system that support Python
