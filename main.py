@@ -332,13 +332,6 @@ class Shell:
         now = datetime.datetime.now()
         print(f"{Fore.CYAN}Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    def show_tree(self, args):
-        """Show directory tree"""
-        try:
-            os.system("tree")
-        except:
-            print(f"{Fore.YELLOW}{GLYPHS['warning']} Command 'tree' doesn't support by Your system")
-
     def rename_file(self, args):
         """Rename file"""
         if len(args) < 2:
@@ -446,3 +439,4 @@ class Shell:
 if __name__ == "__main__":
     shell = Shell()
     shell.run()
+
