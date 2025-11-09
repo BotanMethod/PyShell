@@ -12,7 +12,9 @@ from colorama import init, Fore, Style
 # Initializing colorama for color output
 init(autoreset=True)
 
-version = '1.1'
+# Version info
+version = '1.2'
+year = '2025'
 
 # Setting up encoding to support the Russian language
 sys.stdout.reconfigure(encoding='utf-8')
@@ -63,20 +65,21 @@ class Shell:
             'setenv': self.set_env,
             'history': self.show_history,
             'calc': self.calculator,
-            'edit': self.edit_file
+            'changelog': self.show_changelog,
+            'about': self.about_pyshell
         }
         self.history = []
         self.session_start = datetime.datetime.now()
 
     def display_prompt(self):
         dir_name = os.path.basename(self.current_dir) if self.current_dir != os.path.expanduser("~") else "~"
-        print(f"\n{Fore.CYAN}{self.username}{Fore.WHITE}@{Fore.GREEN}{self.hostname} {Fore.MAGENTA}{dir_name}")
-        print(f"{Fore.RED}{GLYPHS['divider'] * (len(self.username) + len(self.hostname) + len(dir_name) + 2)}")
-        print(f"{Fore.BLUE}{GLYPHS['prompt']} {Style.RESET_ALL}", end="")
+        print(f"\n{Fore.LIGHTBLUE_EX}{self.username}{Fore.WHITE}@{Fore.GREEN}{self.hostname} {Fore.MAGENTA}{dir_name}")
+        print(f"{Fore.WHITE}{GLYPHS['divider'] * (len(self.username) + len(self.hostname) + len(dir_name) + 2)}")
+        print(f"{Fore.WHITE}{GLYPHS['prompt']} {Style.RESET_ALL}", end="")
 
     def run(self):
         self.clear_screen()
-        print(f"{Fore.CYAN}PyShell V1.0 / 2025")
+        print(f"{Fore.GREEN}PyShell v{version} / {year}")
         
         while True:
             try:
@@ -100,6 +103,77 @@ class Shell:
             except Exception as e:
                 print(f"{Fore.RED}{GLYPHS['error']} Error: {str(e)}")
 
+    def show_changelog(self, args):
+        """Show version's changelog"""
+        header = f"""
+                                                    {Fore.GREEN}PyShell v{version} / {year}{Fore.RESET}
+                                                        What's new?
+        """ # Header
+        
+        middle__changes = f"""
+{Fore.GREEN}* Added changelog and [changelog] command (You see this)
+* Added [about] command
+{Fore.RED}* Deleted PSText because of tons of bugs {Fore.RESET}
+        """ # Changes
+        
+        bottom__futureplans = f"""
+                                              What i want to add soon and when?        
+
+* Add Graphic UI (It's done but I have some problems with it + I need to port this version to GUI) (November)
+* Add more glyphs (November - December)
+* Add more ways to customize PyShell (throw the config file) (December - January 2026)
+* Add theme system (Winter, etc.) (November end - December)
+
+I'll probably start implementing GUI from the next version, I plan to do several more versions in the console as well, and then there will be only GUI versions. Maybe I'll just move GUI to a separate directory and make 2 versions at once.
+        """ # Future plans
+        
+        foot__ascii = f"""
+                           ██████╗██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ███████╗██╗      ██████╗  ██████╗ 
+                          ██╔════╝██║  ██║██╔══██╗████╗  ██║██╔════╝ ██╔════╝██║     ██╔═══██╗██╔════╝ 
+                          ██║     ███████║███████║██╔██╗ ██║██║  ███╗█████╗  ██║     ██║   ██║██║  ███╗
+                          ██║     ██╔══██║██╔══██║██║╚██╗██║██║   ██║██╔══╝  ██║     ██║   ██║██║   ██║
+                          ╚██████╗██║  ██║██║  ██║██║ ╚████║╚██████╔╝███████╗███████╗╚██████╔╝╚██████╔╝
+                           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝  ╚═════╝ 
+        
+        
+        """ # ASCII art
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(header)
+        print(middle__changes)
+        print(bottom__futureplans)
+        print(foot__ascii)
+        input(' ')
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+    def about_pyshell(self, args):
+        text = f"""
+                                                ██████╗ ██╗   ██╗███████╗██╗  ██╗
+                                                ██╔══██╗╚██╗ ██╔╝██╔════╝██║  ██║
+                                                ██████╔╝ ╚████╔╝ ███████╗███████║
+                                                ██╔═══╝   ╚██╔╝  ╚════██║██╔══██║
+                                                ██║        ██║   ███████║██║  ██║
+                                                ╚═╝        ╚═╝   ╚══════╝╚═╝  ╚═╝
+        
+{Fore.GREEN}PyShell{Fore.RESET} is a custom CMD shell for Windows/Linux. PyShell providing simple interface with basic functions, list of them you can see with {Fore.CYAN}[help]{Fore.RESET}
+
+{Fore.LIGHTBLUE_EX}Technical information:{Fore.RESET}
+Version: {Fore.LIGHTBLUE_EX}{version}{Fore.RESET}
+Version year: {Fore.LIGHTBLUE_EX}{year}{Fore.RESET}
+PyShell running on: {Fore.LIGHTBLUE_EX}{os.name}{Fore.RESET}
+User running: {Fore.LIGHTBLUE_EX}{self.username}{Fore.RESET}
+Current dir: {Fore.LIGHTBLUE_EX}{self.current_dir}{Fore.RESET}
+Host name: {Fore.LIGHTBLUE_EX}{self.hostname}{Fore.RESET}
+Session started: {Fore.LIGHTBLUE_EX}{self.session_start}{Fore.RESET}
+
+
+
+Thank you for using PyShell! {Fore.RED}<3{Fore.RESET}
+        """
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(text)
+        input('')
+        os.system('cls' if os.name == 'nt' else 'clear')
+
     def show_help(self, args):
         """Show list of avaible commands"""
         help_text = f"""
@@ -120,7 +194,6 @@ class Shell:
   unzip [.zip]  - Extract ZIP-archive
   size [file]  - Show file's size
   tree - Show the directory tree
-  edit [filename] - Edit file 
 
 {Fore.CYAN}🛠System commands:{Style.RESET_ALL}
   ps           - Show process list
@@ -140,6 +213,8 @@ class Shell:
 {Fore.CYAN}Other:{Style.RESET_ALL}
   help         - Show manual about commands
   exit         - Exit
+  about        - Show information about PyShell
+  changelog    - Show changelog
 """
         print(help_text)
 
@@ -438,5 +513,3 @@ class Shell:
 if __name__ == "__main__":
     shell = Shell()
     shell.run()
-
-
