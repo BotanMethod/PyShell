@@ -55,7 +55,6 @@ class Shell:
             'find': self.find_files,
             'size': self.file_size,
             'time': self.show_time,
-            'tree': self.show_tree,
             'rename': self.rename_file,
             'grep': self.grep_text,
             'zip': self.zip_file,
@@ -439,4 +438,5 @@ class Shell:
 if __name__ == "__main__":
     shell = Shell()
     shell.run()
+
 
