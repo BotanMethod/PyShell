@@ -117,6 +117,8 @@ class Shell:
         """ # Changes
         
         bottom__futureplans = f"""
+P.S. Everything written below I write exclusively for myself and what is written below may not coincide with reality.
+                                              
                                               What i want to add soon and when?        
 
 * Add Graphic UI (It's done but I have some problems with it + I need to port this version to GUI) (November)
